@@ -370,9 +370,12 @@ namespace Neo.Compiler
                             emitted = true;
                             _callingConvention = (CallingConvention)attribute.ConstructorArguments[0].Value!;
                             break;
+                        default:
+                            throw new CompilationException(Symbol, DiagnosticId.ExternMethod, $"Unknown attribute class name: {attribute.AttributeClass!.Name}");
+
                     }
                 }
-                if (!emitted) throw new CompilationException(Symbol, DiagnosticId.ExternMethod, $"Unknown method: {Symbol}");
+                if (!emitted) throw new CompilationException(Symbol, DiagnosticId.ExternMethod, $"Unknown method: {Symbol} and {Symbol.ContainingType.Name}, Attributes length: {Symbol.GetAttributes().Length}");
             }
             else
             {
