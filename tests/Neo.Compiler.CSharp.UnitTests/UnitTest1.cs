@@ -75,6 +75,15 @@ namespace Neo.Compiler.CSharp.UnitTests
         }
 
         [TestMethod]
+        public void Test_testArgs1FromCodeStr()
+        {
+            var testengine = new TestEngine();
+            testengine.AddEntryScriptFromCodeStr("./TestClasses/Contract1.cs");
+            var result = testengine.ExecuteTestCaseStandard("testArgs1", 4).Pop();
+            Assert.AreEqual(new byte[] { 1, 2, 3, 4 }.ToHexString(), result.GetSpan().ToHexString());
+        }
+
+        [TestMethod]
         public void Test_testArgs2()
         {
             var testengine = new TestEngine();

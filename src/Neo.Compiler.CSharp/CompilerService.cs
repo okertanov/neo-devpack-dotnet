@@ -10,45 +10,52 @@
 
 using Microsoft.CodeAnalysis;
 using Neo.IO;
+using Neo.IO.Json;
+using Neo.SmartContract;
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using Diagnostic = Microsoft.CodeAnalysis.Diagnostic;
 
 namespace Neo.Compiler
 {
-    class Program
+    public static class CompilerService
     {
-        static int Main(string[] args)
+        public static void Compile(string[] srcPaths, string outDir, string contractName, bool generateDebugInfo, bool generateAssembly, bool noOptimize, bool noInline, byte addressVersion)
         {
-            RootCommand rootCommand = new(Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyTitleAttribute>()!.Title)
+            var options = new Options
             {
-                new Argument<string[]>("paths", "The path of the project file, project directory or source files."),
-                new Option<string>(new[] { "-o", "--output" }, "Specifies the output directory."),
-                new Option<string>("--contract-name", "Specifies the base name of the output files."),
-                new Option<bool>(new[] { "-d", "--debug" }, "Indicates whether to generate debugging information."),
-                new Option<bool>("--assembly", "Indicates whether to generate assembly."),
-                new Option<bool>("--no-optimize", "Instruct the compiler not to optimize the code."),
-                new Option<bool>("--no-inline", "Instruct the compiler not to insert inline code."),
-                new Option<byte>("--address-version", () => ProtocolSettings.Default.AddressVersion, "Indicates the address version used by the compiler.")
+                Output = outDir,
+                ContractName = contractName,
+                Debug = generateDebugInfo,
+                Assembly = generateAssembly,
+                NoOptimize = noOptimize,
+                NoInline = noInline,
+                AddressVersion = addressVersion
             };
-            rootCommand.Handler = CommandHandler.Create<RootCommand, Options, string[]>(Handle);
-            return rootCommand.Invoke(args);
+
+            Handle(options, srcPaths);
         }
 
-        private static int Handle(RootCommand command, Options options, string[] paths)
+        public static CompileResult Compile(string codeStr)
+        {
+            var options = new Options
+            {
+                AddressVersion = ProtocolSettings.Default.AddressVersion
+            };
+            return ProcessSourceCode(options, codeStr);
+        }
+
+        private static int Handle(Options options, string[] paths)
         {
             if (paths is null || paths.Length == 0)
             {
                 var ret = ProcessDirectory(options, Environment.CurrentDirectory);
-                if (ret == 2)
-                {
-                    // Display help without args
-                    command.Invoke("--help");
-                }
                 return ret;
             }
             paths = paths.Select(p => Path.GetFullPath(p)).ToArray();
@@ -105,6 +112,18 @@ namespace Neo.Compiler
         {
             return ProcessOutputs(options, folder, CompilationContext.CompileSources(sourceFiles, options));
         }
+        private static CompileResult ProcessSourceCode(Options options, string srcCode)
+        {
+            var compileRes = CompilationContext.CompileCodeStr(srcCode, options);
+            var nefFile = compileRes.CreateExecutable();
+            var manifest = compileRes.CreateManifest();
+            return new CompileResult
+            {
+                Nef = nefFile,
+                Manifest = manifest,
+                Diagnostics = compileRes.Diagnostics
+            };
+        }
 
         private static int ProcessOutputs(Options options, string folder, CompilationContext context)
         {
@@ -149,5 +168,12 @@ namespace Neo.Compiler
                 return 1;
             }
         }
+    }
+    public class CompileResult
+    {
+        public NefFile Nef { get; set; } = new NefFile();
+        public JObject Manifest { get; set; } = new JObject();
+        public IEnumerable<Diagnostic> Diagnostics { get; set; } = new List<Diagnostic>();
+
     }
 }

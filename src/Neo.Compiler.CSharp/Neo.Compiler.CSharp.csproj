@@ -3,7 +3,7 @@
   <PropertyGroup>
     <AssemblyTitle>Neo.Compiler.CSharp</AssemblyTitle>
     <AssemblyName>nccs</AssemblyName>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <PackageId>Neo.Compiler.CSharp</PackageId>
     <PackAsTool>true</PackAsTool>
     <RootNamespace>Neo.Compiler</RootNamespace>

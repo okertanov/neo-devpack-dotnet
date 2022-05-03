@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Text;
 
 namespace Neo.Compiler.CSharp.UnitTests.Utils
 {
@@ -51,7 +52,24 @@ namespace Neo.Compiler.CSharp.UnitTests.Utils
 
         public CompilationContext AddEntryScript(params string[] files)
         {
-            CompilationContext context = CompilationContext.Compile(files, references, new Options
+            CompilationContext context = CompilationContext.GetSyntaxTreeAndCompile(files, references, new Options
+            {
+                AddressVersion = ProtocolSettings.Default.AddressVersion
+            });
+            if (context.Success)
+            {
+                Nef = context.CreateExecutable();
+                Manifest = context.CreateManifest();
+                DebugInfo = context.CreateDebugInformation();
+                Reset();
+            }
+            return context;
+        }
+        public CompilationContext AddEntryScriptFromCodeStr(string filePath)
+        {
+            var codeStr = File.ReadAllText(filePath, Encoding.UTF8);
+            CompilationContext context = CompilationContext.GetSyntaxTreeAndCompile(codeStr, references, new Options
+
             {
                 AddressVersion = ProtocolSettings.Default.AddressVersion
             });

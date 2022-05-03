@@ -143,9 +143,20 @@ namespace Neo.Compiler
             }
         }
 
-        internal static CompilationContext Compile(IEnumerable<string> sourceFiles, IEnumerable<MetadataReference> references, Options options)
+        internal static CompilationContext GetSyntaxTreeAndCompile(IEnumerable<string> sourceFiles, IEnumerable<MetadataReference> references, Options options)
         {
             IEnumerable<SyntaxTree> syntaxTrees = sourceFiles.OrderBy(p => p).Select(p => CSharpSyntaxTree.ParseText(File.ReadAllText(p), path: p));
+            return Compile(syntaxTrees, references, options);
+        }
+        
+        internal static CompilationContext GetSyntaxTreeAndCompile(string code, IEnumerable<MetadataReference> references, Options options)
+        {
+            var codeAsSyntaxTree = CSharpSyntaxTree.ParseText(code);
+            return Compile(new List<SyntaxTree> { codeAsSyntaxTree }, references, options);
+        }
+
+        internal static CompilationContext Compile(IEnumerable<SyntaxTree> syntaxTrees, IEnumerable<MetadataReference>? references, Options options)
+        {
             CSharpCompilationOptions compilationOptions = new(OutputKind.DynamicallyLinkedLibrary);
             CSharpCompilation compilation = CSharpCompilation.Create(null, syntaxTrees, references, compilationOptions);
             CompilationContext context = new(compilation, options);
@@ -153,11 +164,21 @@ namespace Neo.Compiler
             return context;
         }
 
-        public static CompilationContext CompileSources(string[] sourceFiles, Options options)
+        public static List<MetadataReference> GetReferences()
         {
             List<MetadataReference> references = new(commonReferences);
             references.Add(MetadataReference.CreateFromFile(typeof(scfx.Neo.SmartContract.Framework.SmartContract).Assembly.Location));
-            return Compile(sourceFiles, references, options);
+            return references;
+        }
+
+        public static CompilationContext CompileSources(string[] sourceFiles, Options options)
+        {
+            return GetSyntaxTreeAndCompile(sourceFiles, GetReferences(), options);
+        }
+
+        public static CompilationContext CompileCodeStr(string code, Options options)
+        {
+            return GetSyntaxTreeAndCompile(code, GetReferences(), options);
         }
 
         public static Compilation GetCompilation(string csproj, out string assemblyName)
