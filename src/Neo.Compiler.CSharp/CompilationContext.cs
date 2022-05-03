@@ -100,7 +100,7 @@ namespace Neo.Compiler
         {
             if (!methodsForward.TryGetValue(method, out MethodConvert? convert))
                 convert = methodsConverted[method];
-            return convert.Instructions[0].Offset;
+            return convert.Instructions.Count > 0 ? convert.Instructions[0].Offset : 0;
         }
 
         private static bool ValidateContractTrust(string value)

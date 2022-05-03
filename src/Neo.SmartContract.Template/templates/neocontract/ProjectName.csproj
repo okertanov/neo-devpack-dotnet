@@ -4,9 +4,9 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Neo.SmartContract.Framework" Version="3.1.0" />
-  </ItemGroup>
+  <ProjectReference Include="..\..\..\Neo.SmartContract.Framework\Neo.SmartContract.Framework.csproj">
+      <Aliases>scfx</Aliases>
+  </ProjectReference>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Message Text="Start NeoContract converter, Source File: $(ProjectPath)" Importance="high">
